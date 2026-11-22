@@ -4,37 +4,26 @@ using System.Linq;
 
 namespace Hw9
 {
-    // =====================================================================
     // ЗАДАЧА 1. Система эффектов состояния
-    // =====================================================================
-
-    /// <summary>Любой эффект состояния. Character знает только об этом интерфейсе.</summary>
     public interface IStatusEffect
     {
         string Name { get; }
         int RemainingTurns { get; }
         bool IsStackable { get; }
 
-        /// <summary>true, если пока эффект активен, персонаж не может действовать.</summary>
         bool PreventsAction { get; }
 
-        /// <summary>Эффект истёк (осталось 0 ходов).</summary>
         bool IsExpired { get; }
 
-        /// <summary>Применение эффекта к персонажу в начале хода.</summary>
         void Apply(Character target);
 
-        /// <summary>Уменьшить длительность на 1 ход.</summary>
         void Tick();
 
-        /// <summary>Стакание: прибавить ходы к текущей длительности.</summary>
         void Extend(int turns);
 
-        /// <summary>Обновление: заменить текущую длительность новой.</summary>
         void Refresh(int turns);
     }
 
-    /// <summary>Общая часть для всех эффектов (длительность, стакание, обновление).</summary>
     public abstract class StatusEffectBase : IStatusEffect
     {
         public abstract string Name { get; }
@@ -70,7 +59,6 @@ namespace Hw9
         }
     }
 
-    /// <summary>Отравление: урон игнорирует броню, 3 хода, стакается.</summary>
     public class PoisonEffect : StatusEffectBase
     {
         private readonly int _damage;
@@ -90,7 +78,6 @@ namespace Hw9
         }
     }
 
-    /// <summary>Горение: урон уменьшается бронёй, 2 хода, не стакается.</summary>
     public class BurnEffect : StatusEffectBase
     {
         private readonly int _damage;
@@ -110,7 +97,6 @@ namespace Hw9
         }
     }
 
-    /// <summary>Регенерация: лечит каждый ход, 4 хода, не стакается.</summary>
     public class RegenerationEffect : StatusEffectBase
     {
         private readonly int _heal;
@@ -130,7 +116,6 @@ namespace Hw9
         }
     }
 
-    /// <summary>Заморозка: нет урона, персонаж не может действовать, 1 ход, не стакается.</summary>
     public class FreezeEffect : StatusEffectBase
     {
         public FreezeEffect() : base(1)
@@ -147,7 +132,6 @@ namespace Hw9
         }
     }
 
-    /// <summary>Персонаж. Работает только с IStatusEffect, конкретных эффектов не знает.</summary>
     public class Character
     {
         private readonly List<IStatusEffect> _effects = new List<IStatusEffect>();
@@ -159,7 +143,6 @@ namespace Hw9
 
         public IReadOnlyList<IStatusEffect> ActiveEffects => _effects;
 
-        /// <summary>Может ли персонаж действовать (решают сами эффекты через PreventsAction).</summary>
         public bool CanAct => !_effects.Any(e => e.PreventsAction);
 
         public bool IsAlive => HP > 0;
@@ -172,7 +155,6 @@ namespace Hw9
             Armor = armor;
         }
 
-        /// <summary>Возвращает фактически нанесённый урон.</summary>
         public int TakeDamage(int amount, bool ignoreArmor)
         {
             int damage = ignoreArmor ? amount : Math.Max(0, amount - Armor);
@@ -181,7 +163,6 @@ namespace Hw9
             return damage;
         }
 
-        /// <summary>Возвращает фактически восстановленное здоровье.</summary>
         public int Heal(int amount)
         {
             int healed = Math.Min(amount, MaxHP - HP);
@@ -212,7 +193,6 @@ namespace Hw9
 
         public void ProcessTurn()
         {
-            // копия списка, т.к. истёкшие эффекты удаляются
             foreach (IStatusEffect effect in _effects.ToList())
             {
                 effect.Apply(this);
@@ -236,14 +216,8 @@ namespace Hw9
         }
     }
 
-    // =====================================================================
     // ЗАДАЧА 2. Взаимодействие с окружением (двойная диспетчеризация)
-    // =====================================================================
 
-    /// <summary>
-    /// Visitor: по одному методу на каждый тип объекта окружения.
-    /// Каждая сущность решает сама, как взаимодействовать с каждым объектом.
-    /// </summary>
     public interface IEntityVisitor
     {
         void Visit(Chest chest);
@@ -256,17 +230,17 @@ namespace Hw9
         string Name { get; }
         int HP { get; }
 
-        /// <summary>Первая диспетчеризация: делегирует объекту окружения.</summary>
+        
         void InteractWith(IEnvironmentObject obj);
     }
 
     public interface IEnvironmentObject
     {
-        /// <summary>Вторая диспетчеризация: вызывает метод сущности для своего конкретного типа.</summary>
+        
         void Accept(IEntity entity);
     }
 
-    // ---------- Объекты окружения ----------
+    
 
     public class Chest : IEnvironmentObject
     {
@@ -301,7 +275,6 @@ namespace Hw9
         }
     }
 
-    // ---------- Сущности ----------
 
     public abstract class EntityBase : IEntity
     {
@@ -410,7 +383,7 @@ namespace Hw9
 
         public override void Visit(Trap trap)
         {
-            // обезвредить враг не может, поэтому попадает в ловушку
+            
             if (trap.IsArmed)
             {
                 TakeDamage(trap.Damage);
@@ -466,9 +439,8 @@ namespace Hw9
         }
     }
 
-    // =====================================================================
+    
     // Демонстрация
-    // =====================================================================
 
     public static class Program
     {
@@ -488,9 +460,9 @@ namespace Hw9
 
             Console.WriteLine("\nНакладываем эффекты:");
             hero.ApplyEffect(new PoisonEffect());
-            hero.ApplyEffect(new PoisonEffect());       // стакание: 3 + 3 = 6
+            hero.ApplyEffect(new PoisonEffect());       
             hero.ApplyEffect(new BurnEffect());
-            hero.ApplyEffect(new BurnEffect());         // не стакается: обновление до 2
+            hero.ApplyEffect(new BurnEffect());         
             hero.ApplyEffect(new RegenerationEffect());
             hero.ApplyEffect(new FreezeEffect());
             hero.PrintState();
@@ -517,8 +489,6 @@ namespace Hw9
 
             foreach (IEntity entity in entities)
             {
-                // для каждой сущности объекты создаются заново, чтобы состояние
-                // после предыдущей сущности не скрывало часть сценариев
                 var objects = new List<IEnvironmentObject>
                 {
                     new Chest(),
